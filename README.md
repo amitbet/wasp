@@ -12,7 +12,8 @@ Http Wasp - A simple load generator for http / rest calls
   -w int
     	time between calls in milliseconds (default 10)
 ```   
-Example:
+## Example:
+```
 ./wasp -n 2000 -t http://localhost:9090
 #requests=100, average time per call: 695.055µs, total time: 69.505578ms
 #requests=200, average time per call: 636.66µs, total time: 127.33212ms
@@ -34,3 +35,4 @@ Example:
 #requests=1800, average time per call: 601.71µs, total time: 1.083078481s
 #requests=1900, average time per call: 600.765µs, total time: 1.141454017s
 #requests=2000, average time per call: 599.087µs, total time: 1.198174371s
+```
