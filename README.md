@@ -1,7 +1,8 @@
 # wasp
 Http Wasp - A simple load generator for http / rest calls
 
-Usage of ./wasp:
+## Usage:
+```
   -n int
     	number of calls to execute (0 = unlimited)
   -p string
@@ -10,7 +11,7 @@ Usage of ./wasp:
     	the target url to attack (default "http://localhost:9090")
   -w int
     	time between calls in milliseconds (default 10)
-      
+```   
 Example:
 ./wasp -n 2000 -t http://localhost:9090
 #requests=100, average time per call: 695.055µs, total time: 69.505578ms
