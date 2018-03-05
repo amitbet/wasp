@@ -116,7 +116,7 @@ func main() {
 		select {
 		case signal := <-sigc:
 			if signal != nil {
-				time.Sleep(2 * time.Second)
+				time.Sleep(200 * time.Millisecond)
 				metrics.Print()
 				os.Exit(1)
 			}
@@ -136,7 +136,8 @@ func main() {
 		}
 		waitForWgOrSignal(wg, sigc, metrics)
 	}
-	fmt.Println("-----------")
+	time.Sleep(200 * time.Millisecond)
+	fmt.Println("=====================================")
 	metrics.Print()
 
 }

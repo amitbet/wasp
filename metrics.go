@@ -50,16 +50,26 @@ func (m *Metrics) Update(metric Metric) {
 }
 func (m *Metrics) FormatErrors() string {
 	sb := strings.Builder{}
-	for v, k := range m.ErrorCounts {
-		sb.WriteString(strconv.Itoa(k) + ":" + v + "\n")
+	for k, v := range m.ErrorCounts {
+		sb.WriteString(strconv.Itoa(v) + ":" + k + "\n")
+	}
+	return sb.String()
+}
+func (m *Metrics) FormatStatuses() string {
+	sb := strings.Builder{}
+	for k, v := range m.StatusCounts {
+		sb.WriteString(strconv.Itoa(k) + ":" + strconv.Itoa(v) + ", ")
 	}
 	return sb.String()
 }
 
 func (m *Metrics) Print() {
-	fmt.Printf("#requests=%d, average time per call: %v, total time: %v, average response size: %fKB throughput: %dKBps \nstatuses: %v\n", m.NumberReqs, m.AvgReqTime, m.TimeSinceStart, m.AvgBytesPerReq/1000, int(m.Throughput/1000), m.StatusCounts)
+	fmt.Printf("#requests=%d, average time per call: %v, total time: %v, average response size: %fKB throughput: %dKBps\n", m.NumberReqs, m.AvgReqTime, m.TimeSinceStart, m.AvgBytesPerReq/1000, int(m.Throughput/1000))
+	if len(m.StatusCounts) > 0 {
+		fmt.Println("----Http Statuses----\n", m.FormatStatuses())
+	}
 	if len(m.ErrorCounts) > 0 {
-		fmt.Printf("%v", m.FormatErrors())
+		fmt.Print("----Errors----\n", m.FormatErrors())
 	}
 }
 
