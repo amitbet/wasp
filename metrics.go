@@ -1,9 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -49,14 +49,14 @@ func (m *Metrics) Update(metric Metric) {
 	}
 }
 func (m *Metrics) FormatErrors() string {
-	sb := strings.Builder{}
+	sb := bytes.Buffer{}
 	for k, v := range m.ErrorCounts {
 		sb.WriteString(strconv.Itoa(v) + ":" + k + "\n")
 	}
 	return sb.String()
 }
 func (m *Metrics) FormatStatuses() string {
-	sb := strings.Builder{}
+	sb := bytes.Buffer{}
 	for k, v := range m.StatusCounts {
 		sb.WriteString(strconv.Itoa(k) + ":" + strconv.Itoa(v) + ", ")
 	}

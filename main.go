@@ -20,7 +20,7 @@ func createClient(proxyUrlStr string) *http.Client {
 		log.Fatal("problem while creating http client: ", err)
 	}
 	if proxyUrlStr == "" {
-		return &http.Client{}
+		return &http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(nil)}}
 	}
 
 	myClient := &http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(proxyUrl)}}
