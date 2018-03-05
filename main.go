@@ -31,12 +31,24 @@ func getAndCalcTimes(wg *sync.WaitGroup, client *http.Client, metrics *Metrics, 
 	start := time.Now()
 	res, err := client.Get(url)
 	if err != nil {
-		fmt.Println("Error while connecting to server: ", err)
-		os.Exit(-1)
+		errMsg := "Error while connecting to server: " + err.Error()
+		//fmt.Println(errMsg)
+		newMetric := Metric{Error: &errMsg}
+		metrics.MetricChan <- newMetric
+		if wg != nil {
+			wg.Done()
+		}
+		return
 	}
 	bytes, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		fmt.Println("Error while reading response body: ", err)
+		errMsg := "Error while reading response body: " + err.Error()
+		//fmt.Println(errMsg)
+		newMetric := Metric{Error: &errMsg}
+		metrics.MetricChan <- newMetric
+		if wg != nil {
+			wg.Done()
+		}
 		return
 	}
 	end := time.Now()
