@@ -34,14 +34,15 @@ func getAndCalcTimes(wg *sync.WaitGroup, client *http.Client, metrics *Metrics, 
 		fmt.Println("Error while connecting to server: ", err)
 		os.Exit(-1)
 	}
-	_, err = ioutil.ReadAll(res.Body)
+	bytes, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		fmt.Println("Error while reading response body: ", err)
 		return
 	}
 	end := time.Now()
 	delta := end.Sub(start)
-	metrics.MetricChan <- delta
+	newMetric := Metric{Duration: delta, StatusCode: res.StatusCode, BytesRecieved: len(bytes)}
+	metrics.MetricChan <- newMetric
 	//fmt.Println("req done, time for call: ", delta)
 	if wg != nil {
 		wg.Done()
@@ -59,6 +60,26 @@ func getAndCalcTimes(wg *sync.WaitGroup, client *http.Client, metrics *Metrics, 
 // 	return fmt.Sprintf("%02d:%02d:%02d.%d", h, m, s, ms)
 // }
 
+// waitTimeout waits for the waitgroup for the specified max timeout.
+// Returns true if waiting timed out.
+func waitForWgOrSignal(wg *sync.WaitGroup, sigc chan os.Signal, metrics *Metrics) bool {
+	c := make(chan struct{})
+	go func() {
+		defer close(c)
+		wg.Wait()
+	}()
+	select {
+	case <-c:
+		return false // completed normally
+	case signal := <-sigc:
+		if signal != nil {
+			time.Sleep(2 * time.Second)
+			fmt.Printf("#requests=%d, average time per call: %v, total time: %v\n", metrics.NumberReqs, metrics.AvgReqTime, metrics.TotalReqsTime)
+			os.Exit(1)
+		}
+		return true // timed out
+	}
+}
 func main() {
 	numberOfCalls := flag.Int("n", 0, "number of calls to execute (0 = unlimited)")
 	timeBetweenCalls := flag.Int("w", 10, "time between calls in milliseconds")
@@ -75,31 +96,35 @@ func main() {
 
 	client := createClient(*proxyAddress)
 	metrics := NewMetrics()
-	wg := &sync.WaitGroup{}
+
+	runFunc := func(wg *sync.WaitGroup) {
+		go getAndCalcTimes(wg, client, metrics, *targetAddress) //http://www.google.com/robots.txt
+		time.Sleep(time.Duration(*timeBetweenCalls) * time.Millisecond)
+
+		select {
+		case signal := <-sigc:
+			if signal != nil {
+				time.Sleep(2 * time.Second)
+				metrics.Print()
+				os.Exit(1)
+			}
+		default:
+		}
+	}
 
 	if *numberOfCalls == 0 {
 		for {
-			go getAndCalcTimes(nil, client, metrics, *targetAddress) //http://www.google.com/robots.txt
-			time.Sleep(time.Duration(*timeBetweenCalls) * time.Millisecond)
-
-			select {
-			case signal := <-sigc:
-				if signal != nil {
-					time.Sleep(2 * time.Second)
-					fmt.Printf("#requests=%d, average time per call: %v, total time: %v\n", metrics.NumberReqs, metrics.AvgReqTime, metrics.TotalReqsTime)
-					os.Exit(1)
-				}
-			default:
-			}
+			runFunc(nil)
 		}
 	} else {
+		wg := &sync.WaitGroup{}
 		wg.Add(*numberOfCalls)
 		for i := 0; i < *numberOfCalls; i++ {
-			go getAndCalcTimes(wg, client, metrics, *targetAddress) //http://www.google.com/robots.txt
-			time.Sleep(time.Duration(*timeBetweenCalls) * time.Millisecond)
+			runFunc(wg)
 		}
-		wg.Wait()
+		waitForWgOrSignal(wg, sigc, metrics)
 	}
+	fmt.Println("-----------")
+	metrics.Print()
 
-	fmt.Printf("average time per call: %v, total time: %v\n", metrics.AvgReqTime, metrics.TotalReqsTime)
 }
